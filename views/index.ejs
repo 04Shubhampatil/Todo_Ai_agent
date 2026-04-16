@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Agent</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <!-- SEO Best Practices -->
+    <meta name="description" content="Manage your tasks dynamically and intelligently with TaskMaster AI, a versatile AI-powered todo agent.">
+</head>
+<body>
+    <div class="app-background">
+        <div class="blob-1"></div>
+        <div class="blob-2"></div>
+    </div>
+    
+    <div class="app-container">
+        <main class="chat-wrapper glass-panel">
+            <header class="chat-header">
+                <div class="agent-profile">
+                    <div class="agent-avatar-wrap">
+                        <img src="https://ui-avatars.com/api/?name=AI&background=6C63FF&color=fff&rounded=true" alt="AI Agent">
+                        <div class="pulse-ring"></div>
+                    </div>
+                    <div class="agent-info">
+                        <h1>TaskMaster AI</h1>
+                        <p class="status"><span class="status-dot"></span> Online</p>
+                    </div>
+                </div>
+            </header>
+            
+            <section class="chat-messages" id="chat-messages">
+                <div class="message assistant">
+                    <div class="message-content">
+                        Hello! I am your AI Task Agent. I can manage your todos. Try asking me "Show my tasks", "Add a shopping task", "Delete task 2", or "Update task 1 to something else".
+                    </div>
+                </div>
+            </section>
+            
+            <footer class="chat-input-area">
+                <form id="chat-form">
+                    <input type="text" id="user-input" placeholder="Ask TaskMaster AI to manage your tasks..." autocomplete="off" autofocus />
+                    <button type="submit" id="send-btn" class="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+                </form>
+            </footer>
+        </main>
+    </div>
+    
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        function appendMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', role);
+            
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content');
+            messageContent.innerHTML = content.replace(/\n/g, '<br>');
+            
+            messageDiv.appendChild(messageContent);
+            chatMessages.appendChild(messageDiv);
+            
+            // Auto scroll to bottom with smooth behavior
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+            return messageDiv;
+        }
+
+        function addLoading() {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'assistant', 'loading-msg');
+            
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content', 'typing-indicator');
+            messageContent.innerHTML = '<span></span><span></span><span></span>';
+            
+            messageDiv.appendChild(messageContent);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+            
+            return messageDiv;
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            appendMessage('user', message);
+            userInput.value = '';
+            
+            const loadingNode = addLoading();
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                chatMessages.removeChild(loadingNode);
+                
+                if (data.reply) {
+                    appendMessage('assistant', data.reply);
+                } else if (data.error) {
+                    appendMessage('assistant', `⚠️ Error: ${data.error}`);
+                }
+            } catch (error) {
+                chatMessages.removeChild(loadingNode);
+                appendMessage('assistant', '⚠️ Sorry, an error occurred while connecting to the server.');
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
